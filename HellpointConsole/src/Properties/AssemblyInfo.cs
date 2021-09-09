@@ -1,20 +1,13 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using MelonLoader;
-using HellpointConsole;
-
-[assembly: MelonInfo(typeof(HPConsole), HPConsole.ModInfo.NAME, HPConsole.ModInfo.VERSION, HPConsole.ModInfo.AUTHOR)]
-[assembly: MelonGame(HPConsole.ModInfo.GAME_COMPANY, HPConsole.ModInfo.GAME_NAME)]
 
 // General Information about an assembly is controlled through the following
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle(HPConsole.ModInfo.NAME)]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct(HPConsole.ModInfo.NAME)]
 [assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]

@@ -2,8 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using MelonLoader;
-using Harmony;
+using HarmonyLib;
 using UnityEngine;
 using UI;
 using System.Xml.Serialization;
@@ -12,29 +11,22 @@ using Debugs;
 using UnityEngine.UI;
 using UnhollowerRuntimeLib;
 using Definitions;
+using BepInEx;
+using BepInEx.IL2CPP;
+using BepInEx.Configuration;
 
 namespace HellpointConsole
 {
-    public class HPConsole : MelonMod
+    [BepInPlugin(GUID, NAME, VERSION)]
+    public class HPConsole : BasePlugin
     {
-        public class ModInfo
-        {
-            public const string GUID = "com.sinai.hellpoint.console";
-            public const string NAME = "HellpointConsole";
-            public const string AUTHOR = "Sinai";
-            public const string VERSION = "1.3.0";
-            public const string GAME_NAME = "Hellpoint";
-            public const string GAME_COMPANY = "Cradle Games";
-        }
+        public const string GUID = "com.sinai.hellpoint.console";
+        public const string NAME = "HellpointConsole";
+        public const string VERSION = "2.0.0";
 
-        public class ModConfig
-        {
-            public KeyCode Toggle_Key = KeyCode.Pause;
-        }
+        static HPConsole Instance;
 
-        private const string CONFIG_PATH = @"Mods\HellpointConsole\config.xml";
-        private readonly XmlSerializer xmlSerializer = new XmlSerializer(typeof(ModConfig));
-        public ModConfig config;
+        public static ConfigEntry<KeyCode> Toggle_Key;
 
         private const string InputControlName = "ConsoleInputControl";
         private static bool focusWanted = true;
@@ -54,34 +46,43 @@ namespace HellpointConsole
         private static int m_selectedAutocompleteIndex = -1;
         private static bool m_wantToChooseSelectedAutocomplete = false;
 
-        // find Dargass Tower:
-
-        void Test()
+        public override void Load()
         {
-            foreach (var swi in Resources.FindObjectsOfTypeAll<Gameplay.Switch>()) 
-            {
-                if (swi.key && swi.key.name == "M02_LowCity_Key2")
-                {
-                    Characters.Player.Players[0].Teleport(swi.Position, 0f, true);
-                }
-            }
+            Instance = this;
+
+            Toggle_Key = Config.Bind("Settings", "Console Toggle Key", KeyCode.Pause);
+
+            ClassInjector.RegisterTypeInIl2Cpp<ConsoleBehaviour>();
+            var go = new GameObject("ConsoleBehaviour");
+            go.hideFlags = HideFlags.HideAndDontSave;
+            GameObject.DontDestroyOnLoad(go);
+            go.AddComponent<ConsoleBehaviour>();
+
+            new Harmony(GUID).PatchAll();
         }
 
-
-        // find Characters:
-
-        void test()
+        public class ConsoleBehaviour : MonoBehaviour
         {
-            foreach (var charDef in Resources.FindObjectsOfTypeAll<CharacterDefinition>())
-            {
-                var name = charDef.Title;
-                if (string.IsNullOrEmpty(name))
-                {
-                    name = charDef.name;
-                }
-                MelonLogger.Log($"{name}: {charDef.ID.ToString("D")}");
-            }
+            public ConsoleBehaviour(IntPtr ptr) : base(ptr) { }
+
+            internal void Update() => HPConsole.Update();
+            internal void OnGUI() => HPConsole.OnGUI();
         }
+
+        #region MISC DEBUG SNIPPETS
+
+        // // find Dargass Tower:
+        // 
+        // void Test()
+        // {
+        //     foreach (var swi in Resources.FindObjectsOfTypeAll<Gameplay.Switch>()) 
+        //     {
+        //         if (swi.key && swi.key.name == "M02_LowCity_Key2")
+        //         {
+        //             Characters.Player.Players[0].Teleport(swi.Position, 0f, true);
+        //         }
+        //     }
+        // }
 
 
         // Selected item:
@@ -120,97 +121,36 @@ namespace HellpointConsole
         //    MelonLogger.Log($"Found {found} coins in " + scene.name);
         //}
 
-        // ======== Harmony Patches ========
+        #endregion
 
         [HarmonyPatch(typeof(MultiEventSystem), "Update")]
         public class MultiEventSystem_Update
         {
             [HarmonyPrefix]
-            public static bool Prefix()
-            {
-                if (ShowMenu)
-                {
-                    return false;
-                }
-
-                return true;
-            }
-        }
-
-        // ======== Settings ========
-
-        public override void OnApplicationStart()
-        {
-            LoadSettings();
-        }
-
-        private void LoadSettings()
-        {
-            var folder = Path.GetDirectoryName(CONFIG_PATH);
-            if (!Directory.Exists(folder))
-            {
-                Directory.CreateDirectory(folder);
-            }
-            else if (File.Exists(CONFIG_PATH))
-            {
-                var file = File.OpenRead(CONFIG_PATH);
-                var obj = xmlSerializer.Deserialize(file);
-                file.Close();
-                
-                if (obj is ModConfig loadedConfig)
-                {
-                    config = loadedConfig;
-                    return;
-                }
-            }
-
-            // Only reach this point if valid settings not loaded
-            config = new ModConfig
-            {
-                Toggle_Key = KeyCode.Pause,
-            };
-
-            SaveSettings();
-        }
-
-        private void SaveSettings()
-        {
-            FileStream file = File.Create(CONFIG_PATH);
-            xmlSerializer.Serialize(file, config);
-            file.Close();
+            public static bool Prefix() => !ShowMenu;
         }
 
         // ======== OnUpdate ========
 
-        public override void OnUpdate()
+        public static void Update()
         {
-            base.OnUpdate();
-
             if (!UDebug.instance)
-            {
                 return;
-            }
 
             // update input
 
             if (UnityEngine.Time.time - m_timeOfLastInput > 0.1f)
             {
-                if (Input.GetKeyDown(config.Toggle_Key))
-                {
+                if (Input.GetKeyDown(Toggle_Key.Value))
                     ToggleMenu();
-                }
                 else if (ShowMenu && Input.GetKeyDown(KeyCode.Return))
                 {
                     m_timeOfLastInput = UnityEngine.Time.time;
 
                     if (m_selectedAutocompleteIndex >= 0)
-                    {
                         m_wantToChooseSelectedAutocomplete = true;
-                    }
                     else
-                    {
                         executeWanted = true;
-                    }
                 }
             }
 
@@ -230,9 +170,7 @@ namespace HellpointConsole
                 foreach (var opt in UDebug.commandByName)
                 {
                     if (string.IsNullOrEmpty(input) || opt.key.ToLower().Contains(input))
-                    {
                         list.Add(opt.key);
-                    }
                 }
                 m_currentOptions = list.ToArray();
             }
@@ -274,39 +212,29 @@ namespace HellpointConsole
                     }
                 }
                 else
-                {
                     m_invalidCommand = true;
-                }
             }
 
             if (m_selectedAutocompleteIndex >= m_currentOptions.Length)
-            {
                 m_selectedAutocompleteIndex = -1;
-            }
         }
 
-        private void ToggleMenu()
+        private static void ToggleMenu()
         {
             if (UnityEngine.Time.time -  m_timeOfLastInput < 0.25f)
-            {
                 return;
-            }
 
             m_timeOfLastInput = UnityEngine.Time.time;
 
             ShowMenu = !ShowMenu;
             if (ShowMenu)
-            {
                 focusWanted = true;
-            }
         }
 
         // ======== GUI Draw and Interaction ========
 
-        public override void OnGUI()
+        public static void OnGUI()
         {
-            base.OnGUI();
-
             if (ShowMenu)
             {
                 // check GUI Input event
@@ -319,15 +247,11 @@ namespace HellpointConsole
                         e.Use();
 
                         if (m_selectedAutocompleteIndex >= 0)
-                        {
                             m_wantToChooseSelectedAutocomplete = true;
-                        }
                         else if (!string.IsNullOrEmpty(m_input))
-                        {
                             executeWanted = true;
-                        }
                     }
-                    else if (e.keyCode == KeyCode.Escape || e.keyCode == config.Toggle_Key)
+                    else if (e.keyCode == KeyCode.Escape || e.keyCode == Toggle_Key.Value)
                     {
                         e.Use();
                         ToggleMenu();
@@ -339,22 +263,16 @@ namespace HellpointConsole
                 GUILayout.BeginHorizontal(null);
 
                 if (GUILayout.Button("X", new GUILayoutOption[] { GUILayout.Width(30) }))
-                {
                     ShowMenu = false;
-                }
 
                 GUI.SetNextControlName(InputControlName);
                 m_input = GUILayout.TextField(m_input, null);
 
                 if (GUILayout.Button("Go", new GUILayoutOption[] { GUILayout.Width(30) }))
-                {
                     executeWanted = true;
-                }
 
                 if (executeWanted)
-                {
                     ExecuteConsole();
-                }
 
                 GUILayout.EndHorizontal();
 
@@ -383,13 +301,13 @@ namespace HellpointConsole
             }
             catch (Exception e)
             {
-                MelonLogger.LogWarning($"Exception executing command '{m_input}'!");
-                MelonLogger.Log($"{e.GetType()}, message: {e.Message}\r\nStack: {e.StackTrace}");
+                Instance.Log.LogWarning($"Exception executing command '{m_input}'!");
+                Instance.Log.LogMessage($"{e.GetType()}, message: {e.Message}\r\nStack: {e.StackTrace}");
             }
         }
 
         // get the current list of console options and show autocomplete buttons for them
-        private void AutoCompleteCurrentInput()
+        private static void AutoCompleteCurrentInput()
         {
             GUILayout.BeginVertical(GUI.skin.box, null);
             scroll = GUILayout.BeginScrollView(scroll, GUI.skin.box);
@@ -421,9 +339,7 @@ namespace HellpointConsole
             else
             {
                 if (m_invalidCommand)
-                {
                     GUILayout.Label("<b><color=red>Invalid command!</color></b>", null);
-                }
                 else
                 {
                     // chose first command
@@ -450,20 +366,15 @@ namespace HellpointConsole
         }
 
         // display a string as an AutoComplete result. Shows just as a Label, but acts as a Button.
-        // note: the label behaviour is set in the AutoCompleteCurrentInput() method for efficiency.
-        private void AutoCompleteButton(string s, string rawString = null, bool selected = false)
+        private static void AutoCompleteButton(string s, string rawString = null, bool selected = false)
         {
             if (selected)
-            {
                 s = "<i><color=green>" + s + "</color></i>";
-            }
 
             bool select = false;
 
             if (GUILayout.Button(s, null))
-            {
                 select = true;
-            }
 
             if (select || (m_wantToChooseSelectedAutocomplete && selected))
             {
@@ -509,7 +420,7 @@ namespace HellpointConsole
             }
         }
 
-        private float GetVerticalScrollPos(int index, int maxcount)
+        private static float GetVerticalScrollPos(int index, int maxcount)
         {
             return index * 25;
 
@@ -519,12 +430,10 @@ namespace HellpointConsole
             //return (float)ratio * 1000;
         }
 
-        private bool CheckArrowInput(int maxCount)
+        private static bool CheckArrowInput(int maxCount)
         {
             if (UnityEngine.Time.time - m_timeOfLastInput < 0.1f)
-            {
                 return false;
-            }
 
             bool justScrolled = false;
             Event e = Event.current;
@@ -536,9 +445,7 @@ namespace HellpointConsole
                     justScrolled = true;
                     e.Use();
                     if (m_selectedAutocompleteIndex > 0)
-                    {
                         m_selectedAutocompleteIndex--;
-                    }
                 }
                 else if (e.keyCode == KeyCode.DownArrow)
                 {
@@ -546,9 +453,7 @@ namespace HellpointConsole
                     justScrolled = true;
                     e.Use();
                     if (m_selectedAutocompleteIndex < maxCount - 1)
-                    {
                         m_selectedAutocompleteIndex++;
-                    }
                 }
             }
             return justScrolled;

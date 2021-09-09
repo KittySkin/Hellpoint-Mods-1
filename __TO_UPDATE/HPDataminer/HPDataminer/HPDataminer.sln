@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30413.136
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HPDataminer", "HPDataminer.csproj", "{A4524AE3-78F3-432B-BF19-AB767E008DC5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A4524AE3-78F3-432B-BF19-AB767E008DC5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4524AE3-78F3-432B-BF19-AB767E008DC5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4524AE3-78F3-432B-BF19-AB767E008DC5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4524AE3-78F3-432B-BF19-AB767E008DC5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {29025571-6E44-4439-8C08-ED329890E47B}
+	EndGlobalSection
+EndGlobal

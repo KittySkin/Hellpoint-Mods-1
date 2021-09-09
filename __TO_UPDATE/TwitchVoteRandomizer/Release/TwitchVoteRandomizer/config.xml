@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<ModConfig xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+
+  <!-- How often a random Twich Vote effect will be applied, in seconds. -->
+  <!-- 300 seconds (5 minutes) is the default. -->
+  <Randomize_Interval>300</Randomize_Interval>
+  
+  <!-- Positive effects enabled? (true/false) -->
+  <Positive_Effects>true</Positive_Effects>
+  
+  <!-- Neutral effects enabled? (true/false) -->
+  <Neutral_Effects>true</Neutral_Effects>
+  
+  <!-- Negative effects enabled? (true/false) -->
+  <Negative_Effects>true</Negative_Effects>
+</ModConfig>

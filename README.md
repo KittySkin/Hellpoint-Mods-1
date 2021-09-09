@@ -1,12 +1,10 @@
 Some mods for Hellpoint. 
 
-See also: [CppExplorer](https://github.com/sinaioutlander/CppExplorer), which was designed for Hellpoint but should theoretically work on any IL2CPP game.
-
 ## How to install
-
-First, set up MelonLoader:
-* Download [MelonLoader](https://github.com/HerpDerpinstine/MelonLoader) and install for Hellpoint
+To install BepInEx:
+* Download the `BepInEx.Hellpoint` zip file from this repository
+* Extract into your `Hellpoint` directory. It should extract directly into the folder, so you should see `Hellpoint\BepInEx\`, `Hellpoint\Mono\`, `Hellpoint\doorstop_config.ini` and `Hellpoint\winhttp.dll`. If it all extracted into a folder such as `Hellpoint\BepInEx.Hellpoint\...` then you did it incorrectly.
 
 To install any given Mod:
-* Download the `.dll` or the `.zip` file from the Releases
-* Unzip into your `Hellpoint/Mods/` folder (not into a sub-folder).
+* Download the `.dll` file from the Release folder for that mod
+* Place into your `Hellpoint/BepInEx/plugins/` folder

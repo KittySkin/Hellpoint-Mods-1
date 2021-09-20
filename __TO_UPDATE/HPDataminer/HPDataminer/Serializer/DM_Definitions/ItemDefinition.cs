@@ -12,6 +12,7 @@ namespace HellpointDataminer.DM_Definitions
     {
         public string Title;
         public string Description;
+        public string GUID;
 
         public override void Apply(object obj)
         {
@@ -33,6 +34,7 @@ namespace HellpointDataminer.DM_Definitions
                 }
 
                 Description = itemDef.Description;
+                GUID = itemDef.ID.ToString();
             }
             else
             {
